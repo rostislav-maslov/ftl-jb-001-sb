@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -33,5 +34,9 @@ public class UserApiService {
 
     public Optional<UserDoc> findById(ObjectId id){
         return  userRepository.findById(id);
+    }
+
+    public List<UserDoc> search(){
+        return userRepository.findAll();
     }
 }
