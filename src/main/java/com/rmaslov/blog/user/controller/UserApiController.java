@@ -12,20 +12,29 @@ import org.bson.types.ObjectId;
 import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 public class UserApiController {
     private final UserApiService userApiService;
 
     @PostMapping(UserApiRoutes.ROOT)
-    public UserResponse registration(@RequestBody RegistrationRequest request) throws UserExistException {
-        return UserMapping.getInstance().getResponse().convert(userApiService.registration(request));
+    public UserFullResponse registration(@RequestBody RegistrationRequest request) throws UserExistException {
+        return UserMapping.getInstance().getResponseFull().convert(userApiService.registration(request));
     }
 
     @GetMapping(UserApiRoutes.BY_ID)
     public UserFullResponse byId(@PathVariable ObjectId id) throws ChangeSetPersister.NotFoundException {
         return UserMapping.getInstance().getResponseFull().convert(
                 userApiService.findById(id).orElseThrow(ChangeSetPersister.NotFoundException::new)
+        );
+    }
+
+    @GetMapping(UserApiRoutes.ROOT)
+    public List<UserResponse> search(){
+        return UserMapping.getInstance().getSearch().convert(
+                userApiService.search()
         );
     }
 }
