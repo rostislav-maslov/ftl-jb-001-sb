@@ -1,9 +1,11 @@
 package com.rmaslov.blog.user.controller;
 
 import com.rmaslov.blog.user.api.request.RegistrationRequest;
+import com.rmaslov.blog.user.api.request.UserRequest;
 import com.rmaslov.blog.user.api.response.UserFullResponse;
 import com.rmaslov.blog.user.api.response.UserResponse;
 import com.rmaslov.blog.user.exception.UserExistException;
+import com.rmaslov.blog.user.exception.UserNotExistException;
 import com.rmaslov.blog.user.mapping.UserMapping;
 import com.rmaslov.blog.user.routes.UserApiRoutes;
 import com.rmaslov.blog.user.service.UserApiService;
@@ -39,6 +41,16 @@ public class UserApiController {
     ){
         return UserMapping.getInstance().getSearch().convert(
                 userApiService.search(query, size, skip)
+        );
+    }
+
+    @PutMapping(UserApiRoutes.BY_ID)
+    public UserFullResponse updateById(
+            @PathVariable String id,
+            @RequestBody UserRequest userRequest
+            ) throws UserNotExistException {
+        return UserMapping.getInstance().getResponseFull().convert(
+                userApiService.update(userRequest)
         );
     }
 }
