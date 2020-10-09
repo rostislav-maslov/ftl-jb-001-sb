@@ -2,12 +2,14 @@ package com.rmaslov.blog.user.api.request;
 
 import com.rmaslov.blog.user.model.Address;
 import com.rmaslov.blog.user.model.Company;
+import io.swagger.annotations.ApiModel;
 import lombok.Getter;
 import lombok.Setter;
 import org.bson.types.ObjectId;
 
 @Getter
 @Setter
+@ApiModel(value = "UserRequest", description = "Model for update user")
 public class UserRequest {
     private ObjectId id;
     private String firstName;
