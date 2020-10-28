@@ -1,4 +1,4 @@
-package com.rmaslov.blog.file.api.response;
+package com.rmaslov.blog.photo.api.response;
 
 import io.swagger.annotations.ApiModel;
 import lombok.AllArgsConstructor;
@@ -10,10 +10,11 @@ import lombok.experimental.SuperBuilder;
 @Setter
 @SuperBuilder
 @AllArgsConstructor
-@ApiModel(value = "FileResponse", description = "File data(for search and list)")
-public class FileResponse {
+@ApiModel(value = "PhotoResponse", description = "Photo data(for search and list)")
+public class PhotoResponse {
         protected String id;
         protected String title;
         protected String ownerId;
+        protected String albumId;
         protected String contentType;
 }
