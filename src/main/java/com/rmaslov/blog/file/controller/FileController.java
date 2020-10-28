@@ -7,6 +7,7 @@ import com.rmaslov.blog.file.api.response.FileResponse;
 import com.rmaslov.blog.file.exception.FileExistException;
 import com.rmaslov.blog.file.exception.FileNotExistException;
 import com.rmaslov.blog.file.mapping.FileMapping;
+import com.rmaslov.blog.file.model.FileDoc;
 import com.rmaslov.blog.file.routes.FileApiRoutes;
 import com.rmaslov.blog.file.service.FileApiService;
 import com.rmaslov.blog.user.exception.UserNotExistException;
@@ -45,6 +46,10 @@ public class FileController {
     public void byId(
             @ApiParam(value = "File id") @PathVariable ObjectId id, HttpServletResponse response
     ) throws ChangeSetPersister.NotFoundException, IOException {
+        FileDoc fileDoc = fileApiService.findById(id).orElseThrow();
+        response.addHeader("Content-Type", fileDoc.getContentType());
+        response.addHeader("Content-Disposition", ": attachment; filename*=UTF-8''"+fileDoc.getTitle());
+
         FileCopyUtils.copy(fileApiService.downloadById(id), response.getOutputStream());
     }
 

@@ -8,6 +8,10 @@ import com.rmaslov.blog.album.exception.AlbumExistException;
 import com.rmaslov.blog.album.exception.AlbumNotExistException;
 import com.rmaslov.blog.album.model.AlbumDoc;
 import com.rmaslov.blog.album.repository.AlbumRepository;
+import com.rmaslov.blog.photo.api.request.PhotoSearchRequest;
+import com.rmaslov.blog.photo.model.PhotoDoc;
+import com.rmaslov.blog.photo.repository.PhotoRepository;
+import com.rmaslov.blog.photo.service.PhotoApiService;
 import com.rmaslov.blog.user.exception.UserNotExistException;
 import com.rmaslov.blog.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +30,7 @@ public class AlbumApiService {
     private final AlbumRepository albumRepository;
     private final MongoTemplate mongoTemplate;
     private final UserRepository userRepository;
+    private final PhotoApiService photoApiService;
 
     public AlbumDoc create(AlbumRequest request) throws AlbumExistException, UserNotExistException {
         if(userRepository.findById(request.getOwnerId()).isEmpty()) throw new UserNotExistException();
@@ -76,7 +81,12 @@ public class AlbumApiService {
     }
 
     public void delete(ObjectId id){
+        List<PhotoDoc> photoDocs = photoApiService
+                .search(PhotoSearchRequest.builder().albumId(id).size(10000).build())
+                .getList();
+
+        for(PhotoDoc photoDoc : photoDocs) photoApiService.delete(photoDoc.getId());
+
         albumRepository.deleteById(id);
-        // TODO: delete photos
     }
 }
