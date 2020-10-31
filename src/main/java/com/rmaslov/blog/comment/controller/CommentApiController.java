@@ -1,6 +1,8 @@
 package com.rmaslov.blog.comment.controller;
 
 import com.rmaslov.blog.article.exception.ArticleNotExistException;
+import com.rmaslov.blog.auth.exceptions.AuthException;
+import com.rmaslov.blog.auth.exceptions.NotAccessException;
 import com.rmaslov.blog.base.api.request.SearchRequest;
 import com.rmaslov.blog.base.api.response.OkResponse;
 import com.rmaslov.blog.base.api.response.SearchResponse;
@@ -33,7 +35,7 @@ public class CommentApiController {
             @ApiResponse(code = 200, message = "Success"),
             @ApiResponse(code = 400, message = "Comment already exist")
     })
-    public OkResponse<CommentResponse> create(@RequestBody CommentRequest request) throws CommentExistException, UserNotExistException, ArticleNotExistException {
+    public OkResponse<CommentResponse> create(@RequestBody CommentRequest request) throws  ArticleNotExistException, AuthException {
         return OkResponse.of(CommentMapping.getInstance().getResponse().convert(commentApiService.create(request)));
     }
 
@@ -79,7 +81,7 @@ public class CommentApiController {
     public OkResponse<CommentResponse> updateById(
             @ApiParam(value = "Comment id") @PathVariable String id,
             @RequestBody CommentRequest commentRequest
-    ) throws CommentNotExistException {
+    ) throws CommentNotExistException, AuthException, NotAccessException {
         return OkResponse.of(CommentMapping.getInstance().getResponse().convert(
                 commentApiService.update(commentRequest)
         ));
@@ -94,7 +96,7 @@ public class CommentApiController {
     )
     public OkResponse<String> deleteById(
             @ApiParam(value = "Comment id") @PathVariable ObjectId id
-    ) {
+    ) throws AuthException, NotAccessException, ChangeSetPersister.NotFoundException {
         commentApiService.delete(id);
         return OkResponse.of(HttpStatus.OK.toString());
     }

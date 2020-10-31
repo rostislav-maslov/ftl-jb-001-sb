@@ -1,5 +1,7 @@
 package com.rmaslov.blog.article.controller;
 
+import com.rmaslov.blog.auth.exceptions.AuthException;
+import com.rmaslov.blog.auth.exceptions.NotAccessException;
 import com.rmaslov.blog.base.api.request.SearchRequest;
 import com.rmaslov.blog.base.api.response.OkResponse;
 import com.rmaslov.blog.base.api.response.SearchResponse;
@@ -47,7 +49,7 @@ public class ArticleApiController {
             @ApiResponse(code = 200, message = "Success"),
             @ApiResponse(code = 400, message = "Article already exist")
     })
-    public OkResponse<ArticleResponse> create(@RequestBody ArticleRequest request) throws ArticleExistException, UserNotExistException {
+    public OkResponse<ArticleResponse> create(@RequestBody ArticleRequest request) throws ArticleExistException, UserNotExistException, AuthException {
         return OkResponse.of(ArticleMapping.getInstance().getResponse().convert(articleApiService.create(request)));
     }
 
@@ -79,7 +81,7 @@ public class ArticleApiController {
     public OkResponse<ArticleResponse> updateById(
             @ApiParam(value = "Article id") @PathVariable String id,
             @RequestBody ArticleRequest articleRequest
-    ) throws ArticleNotExistException {
+    ) throws ArticleNotExistException, AuthException, NotAccessException {
         return OkResponse.of(ArticleMapping.getInstance().getResponse().convert(
                 articleApiService.update(articleRequest)
         ));
@@ -94,7 +96,7 @@ public class ArticleApiController {
     )
     public OkResponse<String> deleteById(
             @ApiParam(value = "Article id") @PathVariable ObjectId id
-    ) {
+    ) throws AuthException, NotAccessException, ChangeSetPersister.NotFoundException {
         articleApiService.delete(id);
         return OkResponse.of(HttpStatus.OK.toString());
     }

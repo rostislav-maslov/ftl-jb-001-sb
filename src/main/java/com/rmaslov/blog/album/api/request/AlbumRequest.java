@@ -11,5 +11,4 @@ import org.bson.types.ObjectId;
 public class AlbumRequest {
         private ObjectId id;
         private String title;
-        private ObjectId ownerId;
 }

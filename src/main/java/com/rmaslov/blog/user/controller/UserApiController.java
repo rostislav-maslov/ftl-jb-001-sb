@@ -1,5 +1,7 @@
 package com.rmaslov.blog.user.controller;
 
+import com.rmaslov.blog.auth.exceptions.AuthException;
+import com.rmaslov.blog.auth.exceptions.NotAccessException;
 import com.rmaslov.blog.base.api.request.SearchRequest;
 import com.rmaslov.blog.base.api.response.OkResponse;
 import com.rmaslov.blog.base.api.response.SearchResponse;
@@ -68,7 +70,7 @@ public class UserApiController {
     public OkResponse<UserFullResponse> updateById(
             @ApiParam(value = "User id")  @PathVariable String id,
             @RequestBody UserRequest userRequest
-            ) throws UserNotExistException {
+            ) throws  AuthException {
         return OkResponse.of(UserMapping.getInstance().getResponseFull().convert(
                 userApiService.update(userRequest)
         ));
@@ -83,7 +85,7 @@ public class UserApiController {
     )
     public OkResponse<String> deleteById(
             @ApiParam(value = "User id") @PathVariable ObjectId id
-    ){
+    ) throws AuthException, NotAccessException {
         userApiService.delete(id);
         return OkResponse.of(HttpStatus.OK.toString());
     }

@@ -2,6 +2,10 @@ package com.rmaslov.blog.comment.service;
 
 import com.rmaslov.blog.article.exception.ArticleNotExistException;
 import com.rmaslov.blog.article.repository.ArticleRepository;
+import com.rmaslov.blog.auth.exceptions.AuthException;
+import com.rmaslov.blog.auth.exceptions.NotAccessException;
+import com.rmaslov.blog.auth.service.AuthService;
+import com.rmaslov.blog.base.service.CheckAccess;
 import com.rmaslov.blog.comment.api.request.CommentSearchRequest;
 import com.rmaslov.blog.comment.mapping.CommentMapping;
 import com.rmaslov.blog.base.api.request.SearchRequest;
@@ -12,9 +16,11 @@ import com.rmaslov.blog.comment.exception.CommentNotExistException;
 import com.rmaslov.blog.comment.model.CommentDoc;
 import com.rmaslov.blog.comment.repository.CommentRepository;
 import com.rmaslov.blog.user.exception.UserNotExistException;
+import com.rmaslov.blog.user.model.UserDoc;
 import com.rmaslov.blog.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
+import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -26,18 +32,20 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class CommentApiService {
+public class CommentApiService extends CheckAccess<CommentDoc> {
     private final CommentRepository commentRepository;
     private final MongoTemplate mongoTemplate;
     private final UserRepository userRepository;
     private final ArticleRepository articleRepository;
+    private final AuthService authService;
 
-    public CommentDoc create(CommentRequest request) throws CommentExistException, ArticleNotExistException, UserNotExistException {
-        if (userRepository.findById(request.getUserId()).isPresent() == false) throw new UserNotExistException();
+    public CommentDoc create(CommentRequest request) throws ArticleNotExistException, AuthException {
+        UserDoc userDoc = authService.currentUser();
+
         if (articleRepository.findById(request.getArticleId()).isPresent() == false)
             throw new ArticleNotExistException();
 
-        CommentDoc commentDoc = CommentMapping.getInstance().getRequest().convert(request);
+        CommentDoc commentDoc = CommentMapping.getInstance().getRequest().convert(request, userDoc.getId());
         commentRepository.save(commentDoc);
         return commentDoc;
     }
@@ -55,19 +63,19 @@ public class CommentApiService {
             orCriterias.add(Criteria.where("message").regex(request.getQuery(), "i"));
         }
 
-        if(request.getArticleId() != null){
+        if (request.getArticleId() != null) {
             orCriterias.add(Criteria.where("articleId").is(request.getArticleId()));
         }
 
-        if(request.getUserId() != null){
+        if (request.getUserId() != null) {
             orCriterias.add(Criteria.where("userId").is(request.getUserId()));
         }
 
         Criteria criteria = new Criteria();
 
-        if(orCriterias.size() > 0){
+        if (orCriterias.size() > 0) {
             criteria = criteria.orOperator(
-                orCriterias.toArray(new Criteria[orCriterias.size()])
+                    orCriterias.toArray(new Criteria[orCriterias.size()])
             );
         }
 
@@ -81,15 +89,16 @@ public class CommentApiService {
         return SearchResponse.of(commentDocs, count);
     }
 
-    public CommentDoc update(CommentRequest request) throws CommentNotExistException {
+    public CommentDoc update(CommentRequest request) throws CommentNotExistException, AuthException, NotAccessException {
         Optional<CommentDoc> commentDocOptional = commentRepository.findById(request.getId());
         if (commentDocOptional.isPresent() == false) {
             throw new CommentNotExistException();
         }
 
         CommentDoc oldDoc = commentDocOptional.get();
+        UserDoc owner = checkAccess(oldDoc);
 
-        CommentDoc commentDoc = CommentMapping.getInstance().getRequest().convert(request);
+        CommentDoc commentDoc = CommentMapping.getInstance().getRequest().convert(request, owner.getId());
         commentDoc.setId(oldDoc.getId());
         commentDoc.setArticleId(oldDoc.getArticleId());
         commentDoc.setUserId(oldDoc.getUserId());
@@ -98,7 +107,18 @@ public class CommentApiService {
         return commentDoc;
     }
 
-    public void delete(ObjectId id) {
+    public void delete(ObjectId id) throws AuthException, NotAccessException, ChangeSetPersister.NotFoundException {
+        checkAccess(commentRepository.findById(id).orElseThrow(ChangeSetPersister.NotFoundException::new));
         commentRepository.deleteById(id);
+    }
+
+    @Override
+    protected ObjectId getOwnerFromEntity(CommentDoc entity) {
+        return entity.getUserId();
+    }
+
+    @Override
+    protected AuthService authService() {
+        return authService;
     }
 }

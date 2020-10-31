@@ -6,25 +6,19 @@ import com.rmaslov.blog.album.api.request.AlbumRequest;
 import com.rmaslov.blog.album.api.response.AlbumResponse;
 import com.rmaslov.blog.album.model.AlbumDoc;
 import lombok.Getter;
+import org.bson.types.ObjectId;
 
 import java.util.stream.Collectors;
 
 @Getter
 public class AlbumMapping {
-    public static class RequestMapping extends BaseMapping<AlbumRequest, AlbumDoc> {
-
-        @Override
-        public AlbumDoc convert(AlbumRequest albumRequest) {
+    public static class RequestMapping{
+        public AlbumDoc convert(AlbumRequest albumRequest, ObjectId ownerId) {
             return AlbumDoc.builder()
                     .id(albumRequest.getId())
                     .title(albumRequest.getTitle())
-                    .ownerId(albumRequest.getOwnerId())
+                    .ownerId(ownerId)
                     .build();
-        }
-
-        @Override
-        public AlbumRequest unmapping(AlbumDoc albumDoc) {
-            throw new RuntimeException("dont use this");
         }
     }
 
