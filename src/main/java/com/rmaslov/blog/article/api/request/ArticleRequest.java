@@ -12,5 +12,4 @@ public class ArticleRequest {
         private ObjectId id;
         private String title;
         private String body;
-        private ObjectId ownerId;
 }

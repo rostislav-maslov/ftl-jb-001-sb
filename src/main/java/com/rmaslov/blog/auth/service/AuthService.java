@@ -3,12 +3,18 @@ package com.rmaslov.blog.auth.service;
 import com.rmaslov.blog.auth.api.request.AuthRequest;
 import com.rmaslov.blog.auth.entity.CustomUserDetails;
 import com.rmaslov.blog.auth.exceptions.AuthException;
+import com.rmaslov.blog.security.JwtFilter;
 import com.rmaslov.blog.security.JwtProvider;
 import com.rmaslov.blog.user.exception.UserNotExistException;
 import com.rmaslov.blog.user.model.UserDoc;
 import com.rmaslov.blog.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import javax.servlet.http.HttpServletRequest;
 
 @Component
 @RequiredArgsConstructor
@@ -38,5 +44,24 @@ public class AuthService {
 
         String token = jwtProvider.generateToken(authRequest.getEmail());
         return token;
+    }
+
+    public static HttpServletRequest getCurrentHttpRequest(){
+        RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
+        if( requestAttributes instanceof ServletRequestAttributes){
+            HttpServletRequest request = ((ServletRequestAttributes)requestAttributes).getRequest();
+            return request;
+        }
+        return null;
+    }
+
+    public UserDoc currentUser() throws AuthException {
+        try {
+            String email = jwtProvider.getEmailFromToken(JwtFilter.getTokenFromRequest(getCurrentHttpRequest()));
+            UserDoc userDoc = userRepository.findByEmail(email).orElseThrow(UserNotExistException::new);
+            return userDoc;
+        }catch (Exception e){
+            throw new AuthException();
+        }
     }
 }

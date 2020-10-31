@@ -1,6 +1,8 @@
 package com.rmaslov.blog.photo.controller;
 
 import com.rmaslov.blog.album.exception.AlbumNotExistException;
+import com.rmaslov.blog.auth.exceptions.AuthException;
+import com.rmaslov.blog.auth.exceptions.NotAccessException;
 import com.rmaslov.blog.base.api.request.SearchRequest;
 import com.rmaslov.blog.base.api.response.OkResponse;
 import com.rmaslov.blog.base.api.response.SearchResponse;
@@ -71,7 +73,7 @@ public class PhotoApiController {
     public OkResponse<PhotoResponse> updateById(
             @ApiParam(value = "Photo id")  @PathVariable String id,
             @RequestBody PhotoRequest photoRequest
-            ) throws PhotoNotExistException {
+            ) throws PhotoNotExistException, AuthException, NotAccessException {
         return OkResponse.of(PhotoMapping.getInstance().getResponse().convert(
                 photoApiService.update(photoRequest)
         ));
@@ -86,7 +88,7 @@ public class PhotoApiController {
     )
     public OkResponse<String> deleteById(
             @ApiParam(value = "Photo id") @PathVariable ObjectId id
-    ){
+    ) throws AuthException, NotAccessException, ChangeSetPersister.NotFoundException {
         photoApiService.delete(id);
         return OkResponse.of(HttpStatus.OK.toString());
     }

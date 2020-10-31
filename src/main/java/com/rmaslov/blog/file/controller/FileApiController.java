@@ -1,5 +1,7 @@
 package com.rmaslov.blog.file.controller;
 
+import com.rmaslov.blog.auth.exceptions.AuthException;
+import com.rmaslov.blog.auth.exceptions.NotAccessException;
 import com.rmaslov.blog.base.api.request.SearchRequest;
 import com.rmaslov.blog.base.api.response.OkResponse;
 import com.rmaslov.blog.base.api.response.SearchResponse;
@@ -63,7 +65,7 @@ public class FileApiController {
     )
     public OkResponse<String> deleteById(
             @ApiParam(value = "File id") @PathVariable ObjectId id
-    ){
+    ) throws AuthException, NotAccessException, ChangeSetPersister.NotFoundException {
         fileApiService.delete(id);
         return OkResponse.of(HttpStatus.OK.toString());
     }

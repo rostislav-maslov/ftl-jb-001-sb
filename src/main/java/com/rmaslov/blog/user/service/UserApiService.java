@@ -1,5 +1,8 @@
 package com.rmaslov.blog.user.service;
 
+import com.rmaslov.blog.auth.exceptions.AuthException;
+import com.rmaslov.blog.auth.exceptions.NotAccessException;
+import com.rmaslov.blog.auth.service.AuthService;
 import com.rmaslov.blog.base.api.request.SearchRequest;
 import com.rmaslov.blog.base.api.response.SearchResponse;
 import com.rmaslov.blog.user.api.request.RegistrationRequest;
@@ -26,6 +29,7 @@ import java.util.Optional;
 public class UserApiService {
     private final UserRepository userRepository;
     private final MongoTemplate mongoTemplate;
+    private final AuthService authService;
 
     public UserDoc registration(RegistrationRequest request) throws UserExistException {
         if (userRepository.findByEmail(request.getEmail()).isPresent() == true) {
@@ -65,23 +69,21 @@ public class UserApiService {
         return SearchResponse.of(userDocs, count);
     }
 
-    public UserDoc update(UserRequest request) throws UserNotExistException {
-        Optional<UserDoc> userDocOptional = userRepository.findById(request.getId());
-        if(userDocOptional.isPresent() == false){
-            throw new UserNotExistException();
-        }
+    public UserDoc update(UserRequest request) throws AuthException {
+        UserDoc userDoc = authService.currentUser();
 
-        UserDoc userDoc = userDocOptional.get();
         userDoc.setLastName(request.getLastName());
         userDoc.setFirstName(request.getFirstName());
         userDoc.setAddress(request.getAddress());
         userDoc.setCompany(request.getCompany());
+
         userRepository.save(userDoc);
 
         return userDoc;
     }
 
-    public void delete(ObjectId id){
+    public void delete(ObjectId id) throws NotAccessException, AuthException {
+        if(authService.currentUser().getId().equals(id) == false) throw new NotAccessException();
         userRepository.deleteById(id);
     }
 }

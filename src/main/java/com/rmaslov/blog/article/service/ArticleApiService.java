@@ -1,6 +1,9 @@
 package com.rmaslov.blog.article.service;
 
 import com.rmaslov.blog.article.mapping.ArticleMapping;
+import com.rmaslov.blog.auth.exceptions.AuthException;
+import com.rmaslov.blog.auth.exceptions.NotAccessException;
+import com.rmaslov.blog.auth.service.AuthService;
 import com.rmaslov.blog.base.api.request.SearchRequest;
 import com.rmaslov.blog.base.api.response.SearchResponse;
 import com.rmaslov.blog.article.api.request.ArticleRequest;
@@ -8,6 +11,7 @@ import com.rmaslov.blog.article.exception.ArticleExistException;
 import com.rmaslov.blog.article.exception.ArticleNotExistException;
 import com.rmaslov.blog.article.model.ArticleDoc;
 import com.rmaslov.blog.article.repository.ArticleRepository;
+import com.rmaslov.blog.base.service.CheckAccess;
 import com.rmaslov.blog.user.exception.UserNotExistException;
 import com.rmaslov.blog.user.model.UserDoc;
 import com.rmaslov.blog.user.repository.UserRepository;
@@ -24,16 +28,16 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class ArticleApiService {
+public class ArticleApiService extends CheckAccess<ArticleDoc> {
     private final ArticleRepository articleRepository;
     private final MongoTemplate mongoTemplate;
     private final UserRepository userRepository;
+    private final AuthService authService;
 
-    public ArticleDoc create(ArticleRequest request) throws ArticleExistException, UserNotExistException {
-        Optional<UserDoc> userDoc = userRepository.findById(request.getOwnerId());
-        if(userDoc.isPresent() == false) throw new UserNotExistException();
+    public ArticleDoc create(ArticleRequest request) throws AuthException {
+        UserDoc userDoc = authService.currentUser();
 
-        ArticleDoc articleDoc = ArticleMapping.getInstance().getRequest().convert(request);
+        ArticleDoc articleDoc = ArticleMapping.getInstance().getRequest().convert(request, userDoc.getId());
         articleRepository.save(articleDoc);
         return articleDoc;
     }
@@ -63,15 +67,16 @@ public class ArticleApiService {
         return SearchResponse.of(articleDocs, count);
     }
 
-    public ArticleDoc update(ArticleRequest request) throws ArticleNotExistException {
+    public ArticleDoc update(ArticleRequest request) throws ArticleNotExistException, AuthException, NotAccessException {
         Optional<ArticleDoc> articleDocOptional = articleRepository.findById(request.getId());
         if(articleDocOptional.isPresent() == false){
             throw new ArticleNotExistException();
         }
 
         ArticleDoc oldDoc = articleDocOptional.get();
+        UserDoc owner = checkAccess(oldDoc);
 
-        ArticleDoc articleDoc = ArticleMapping.getInstance().getRequest().convert(request);
+        ArticleDoc articleDoc = ArticleMapping.getInstance().getRequest().convert(request, owner.getId());
         articleDoc.setId(request.getId());
         articleDoc.setOwnerId(oldDoc.getOwnerId());
         articleRepository.save(articleDoc);
@@ -79,7 +84,18 @@ public class ArticleApiService {
         return articleDoc;
     }
 
-    public void delete(ObjectId id){
+    public void delete(ObjectId id) throws AuthException, NotAccessException, ChangeSetPersister.NotFoundException {
+        checkAccess(articleRepository.findById(id).orElseThrow(ChangeSetPersister.NotFoundException::new));
         articleRepository.deleteById(id);
+    }
+
+    @Override
+    protected ObjectId getOwnerFromEntity(ArticleDoc entity) {
+        return entity.getOwnerId();
+    }
+
+    @Override
+    protected AuthService authService() {
+        return authService;
     }
 }

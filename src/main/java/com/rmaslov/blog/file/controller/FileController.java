@@ -1,5 +1,6 @@
 package com.rmaslov.blog.file.controller;
 
+import com.rmaslov.blog.auth.exceptions.AuthException;
 import com.rmaslov.blog.base.api.request.SearchRequest;
 import com.rmaslov.blog.base.api.response.OkResponse;
 import com.rmaslov.blog.base.api.response.SearchResponse;
@@ -37,8 +38,9 @@ public class FileController {
             @ApiResponse(code = 200, message = "Success"),
             @ApiResponse(code = 400, message = "File already exist")
     })
-    public @ResponseBody OkResponse<FileResponse> create(@RequestParam MultipartFile file, @RequestParam ObjectId ownerId) throws FileExistException, IOException, UserNotExistException {
-        return OkResponse.of(FileMapping.getInstance().getResponse().convert(fileApiService.create(file, ownerId)));
+    public @ResponseBody
+    OkResponse<FileResponse> create(@RequestParam MultipartFile file) throws IOException, AuthException {
+        return OkResponse.of(FileMapping.getInstance().getResponse().convert(fileApiService.create(file)));
     }
 
     @GetMapping(FileApiRoutes.DOWNLOAD)
@@ -48,7 +50,7 @@ public class FileController {
     ) throws ChangeSetPersister.NotFoundException, IOException {
         FileDoc fileDoc = fileApiService.findById(id).orElseThrow();
         response.addHeader("Content-Type", fileDoc.getContentType());
-        response.addHeader("Content-Disposition", ": attachment; filename*=UTF-8''"+fileDoc.getTitle());
+        response.addHeader("Content-Disposition", ": attachment; filename*=UTF-8''" + fileDoc.getTitle());
 
         FileCopyUtils.copy(fileApiService.downloadById(id), response.getOutputStream());
     }
