@@ -3,6 +3,7 @@ package com.rmaslov.blog.auth.service;
 import com.rmaslov.blog.auth.api.request.AuthRequest;
 import com.rmaslov.blog.auth.entity.CustomUserDetails;
 import com.rmaslov.blog.auth.exceptions.AuthException;
+import com.rmaslov.blog.base.service.EmailSenderService;
 import com.rmaslov.blog.security.JwtFilter;
 import com.rmaslov.blog.security.JwtProvider;
 import com.rmaslov.blog.user.exception.UserNotExistException;
@@ -22,6 +23,7 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final JwtProvider jwtProvider;
+    private final EmailSenderService emailSenderService;
 
     public CustomUserDetails loadUserByEmail(String email) throws UserNotExistException {
         UserDoc userDoc = userRepository.findByEmail(email).orElseThrow(UserNotExistException::new);
@@ -33,6 +35,10 @@ public class AuthService {
         if(userDoc.getPassword().equals(UserDoc.hexPassword(authRequest.getPassword())) == false){
             userDoc.setFailLogin(userDoc.getFailLogin() + 1);
             userRepository.save(userDoc);
+
+            if(userDoc.getFailLogin() >= 5){
+                emailSenderService.sendEmailAlert(userDoc.getEmail());
+            }
 
             throw new AuthException();
         }

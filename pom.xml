@@ -76,6 +76,12 @@
         </dependency>
         <!-- SECURITY -->
 
+        <!-- EMAIL -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+        <!-- EMAIL -->
 
         <dependency>
             <groupId>io.springfox</groupId>
